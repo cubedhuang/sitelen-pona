@@ -1,12 +1,12 @@
-import { Canvas, GlobalFonts } from "@napi-rs/canvas";
+import { GlobalFonts } from "@napi-rs/canvas";
 import fs from "fs/promises";
 
-import { getOffset } from "./center.js";
+import { createImage } from "./createImage.js";
 import type { Linku } from "./types.js";
 
 GlobalFonts.loadFontsFromDir("./fonts");
 
-const SIZE = 400;
+const SIZES = [64, 128, 256, 512, 1024];
 
 const data: Linku = await fetch("https://linku.la/jasima/data.json").then(res =>
 	res.json()
@@ -32,29 +32,39 @@ for (const word of Object.values(data.data)) {
 	allGlyphs.push(...glyphs);
 }
 
-await Promise.all(
-	allGlyphs.map(async glyph => {
-		const canvas = new Canvas(SIZE, SIZE);
-		const ctx = canvas.getContext("2d");
+await fs.mkdir("./img", { recursive: true });
+for (const size of SIZES) {
+	if (size === 256) continue;
+	await fs.mkdir(`./img/${size}`, { recursive: true });
+}
 
-		ctx.font = `${SIZE}px Fairfax Pona HD`;
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
+// await Promise.all(
+// 	allGlyphs
+// 		.map(glyph =>
+// 			SIZES.map(async size => {
+// 				const pngData = await createImage(size, glyph);
 
-		ctx.fillStyle = "#ffffff";
+// 				if (size !== 256) {
+// 					await fs.writeFile(`./img/${size}/${glyph}.png`, pngData);
+// 				} else {
+// 					await fs.writeFile(`./img/${glyph}.png`, pngData);
+// 				}
 
-		ctx.clearRect(0, 0, SIZE, SIZE);
-		ctx.fillText(glyph, SIZE / 2, SIZE / 2);
+// 				console.log(`Wrote ${glyph}.png (${size})`);
+// 			})
+// 		)
+// 		.flat()
+// );
+for (const glyph of allGlyphs) {
+	for (const size of SIZES) {
+		const pngData = await createImage(size, glyph);
 
-		const [offsetX, offsetY] = getOffset(SIZE, ctx);
+		if (size !== 256) {
+			await fs.writeFile(`./img/${size}/${glyph}.png`, pngData);
+		} else {
+			await fs.writeFile(`./img/${glyph}.png`, pngData);
+		}
 
-		ctx.clearRect(0, 0, SIZE, SIZE);
-
-		ctx.fillText(glyph, SIZE / 2 + offsetX, SIZE / 2 + offsetY);
-
-		const pngData = await canvas.encode("png");
-		await fs
-			.writeFile(`./img/${glyph}.png`, pngData)
-			.catch(err => console.error(err));
-	})
-);
+		console.log(`Wrote ${glyph}.png (${size})`);
+	}
+}
