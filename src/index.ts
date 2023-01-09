@@ -1,20 +1,16 @@
 import { Canvas, GlobalFonts } from "@napi-rs/canvas";
 import fs from "fs/promises";
 
+import { getOffset } from "./center.js";
 import type { Linku } from "./types.js";
 
 GlobalFonts.loadFontsFromDir("./fonts");
 
 const SIZE = 400;
 
-// ctx.fillText("esun", SIZE / 2, SIZE / 2);
-
 const data: Linku = await fetch("https://linku.la/jasima/data.json").then(res =>
 	res.json()
 );
-
-// const pngData = await canvas.encode("png");
-// await fs.writeFile("test.png", pngData);
 
 const allGlyphs: string[] = [];
 
@@ -49,6 +45,12 @@ await Promise.all(
 
 		ctx.clearRect(0, 0, SIZE, SIZE);
 		ctx.fillText(glyph, SIZE / 2, SIZE / 2);
+
+		const [offsetX, offsetY] = getOffset(SIZE, ctx);
+
+		ctx.clearRect(0, 0, SIZE, SIZE);
+
+		ctx.fillText(glyph, SIZE / 2 + offsetX, SIZE / 2 + offsetY);
 
 		const pngData = await canvas.encode("png");
 		await fs
