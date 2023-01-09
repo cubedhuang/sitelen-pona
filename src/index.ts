@@ -6,7 +6,8 @@ import type { Linku } from "./types.js";
 
 GlobalFonts.loadFontsFromDir("./fonts");
 
-const SIZES = [64, 128, 256, 512, 1024];
+const SIZES = [16, 24, 32, 48, 64, 128, 256, 512];
+const DEFAULT_SIZE = 64;
 
 const data: Linku = await fetch("https://linku.la/jasima/data.json").then(res =>
 	res.json()
@@ -32,39 +33,19 @@ for (const word of Object.values(data.data)) {
 	allGlyphs.push(...glyphs);
 }
 
-await fs.mkdir("./img", { recursive: true });
 for (const size of SIZES) {
-	if (size === 256) continue;
 	await fs.mkdir(`./img/${size}`, { recursive: true });
 }
 
-// await Promise.all(
-// 	allGlyphs
-// 		.map(glyph =>
-// 			SIZES.map(async size => {
-// 				const pngData = await createImage(size, glyph);
-
-// 				if (size !== 256) {
-// 					await fs.writeFile(`./img/${size}/${glyph}.png`, pngData);
-// 				} else {
-// 					await fs.writeFile(`./img/${glyph}.png`, pngData);
-// 				}
-
-// 				console.log(`Wrote ${glyph}.png (${size})`);
-// 			})
-// 		)
-// 		.flat()
-// );
 for (const glyph of allGlyphs) {
 	for (const size of SIZES) {
 		const pngData = await createImage(size, glyph);
 
-		if (size !== 256) {
-			await fs.writeFile(`./img/${size}/${glyph}.png`, pngData);
-		} else {
-			await fs.writeFile(`./img/${glyph}.png`, pngData);
-		}
+		await fs.writeFile(`./img/${size}/${glyph}.png`, pngData);
 
-		console.log(`Wrote ${glyph}.png (${size})`);
+		if (size === DEFAULT_SIZE)
+			await fs.writeFile(`./img/${glyph}.png`, pngData);
 	}
+
+	console.log(`Wrote ${glyph} glyphs`);
 }
